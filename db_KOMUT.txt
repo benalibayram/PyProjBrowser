@@ -1,0 +1,20 @@
+CREATE TABLE "MRcekim" (
+	"MRcekimID"	INTEGER UNIQUE,
+	"MRcekimAciklama"	TEXT NOT NULL,
+	PRIMARY KEY("MRcekimID" AUTOINCREMENT)
+)
+CREATE TABLE "projeler" (
+	"id"	INTEGER UNIQUE,
+	"isim"	TEXT,
+	"ProjPI"	TEXT,
+	"ProjType"	INTEGER,
+	"ProjPatientGroup"	INTEGER,
+	"ProjSekans"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+)
+CREATE TABLE "projeler_MRcekim_joint" (
+	"projeler_id"	INTEGER NOT NULL,
+	"MRcekimID"	INTEGER NOT NULL,
+	FOREIGN KEY("projeler_id") REFERENCES "projeler"("id") ON DELETE RESTRICT,
+	FOREIGN KEY("MRcekimID") REFERENCES "MRcekim"("MRcekimID") ON DELETE RESTRICT
+)

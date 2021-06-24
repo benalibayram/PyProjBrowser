@@ -96,6 +96,7 @@ class Application(Frame):
         
     def proj_bagla(self):
         self.db = self.Database(self.Projdb_file.get())
+        
         self.populate_list2()
     
     def proj_ekle(self):
