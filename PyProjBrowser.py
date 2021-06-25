@@ -6,8 +6,8 @@ Created on Tue Jun 22 18:58:18 2021
 """
 
 
-from tkinter import Tk, TOP, BOTH, X, Y, LEFT, RIGHT, StringVar
-from tkinter.ttk import Frame, Label, Entry, Button, Treeview, Scrollbar
+from tkinter import *
+from tkinter.ttk import *
 import sqlite3
 from sqlite3 import Error
 
@@ -26,24 +26,16 @@ class Application(Frame):
         frame_ust = Frame(self)
         frame_ust.pack(fill=X)
         # Label örneği: başlık
-        self.baslik = Label(frame_ust, text='Search by Project Name',
+        self.proj_bagla()
+        self.Baslik = Label(frame_ust, text="Projenizi seçiniz:",
                                    font=('bold',12))
-        self.baslik.pack(side=TOP,pady=20 )
+        self.Baslik.pack(side=LEFT,pady=20 )
+        self.selected_proj = StringVar()
+        self.ProjList_dropdown = Combobox(frame_ust, textvariable=self.selected_proj)
+        self.ProjList_dropdown['state'] = 'readonly'  # normal
+        self.ProjList_dropdown['values'] = self.db.fetch2("SELECT isim FROM projeler")
+        self.ProjList_dropdown.pack(fill=X, padx=5, expand=True)
         # _________________________________
-        frame_bir = Frame(self)
-        frame_bir.pack(fill=X)
-        # Buton örneği: DB dosyasını bağla
-        self.Projdb_bagla = Button(frame_bir)
-        self.Projdb_bagla["text"] = "BAĞLAN"
-        self.Projdb_bagla["command"] = self.proj_bagla #Projdb_file bağlanacak
-        self.Projdb_bagla.pack(side=LEFT, padx=5, pady=5)
-        # Entry örneği: DB dosya yolu
-        self.Projdb_file = StringVar()
-        self.Projdb_file.set("deneme.db")
-        self.Projdb_search = Entry(frame_bir, textvariable=self.Projdb_file)
-        # self.ProjPI_search.bind('<Key-Return>', self.entry_girildi) # Enter
-        self.Projdb_search.pack(fill=X, padx=5, expand=True)
-        #____________________________________
         frame_iki = Frame(self)
         frame_iki.pack(fill=X)
         # Yeni girişi ekle
@@ -94,10 +86,8 @@ class Application(Frame):
         self.proj_tree_view.pack(side=RIGHT, fill=BOTH, padx=5, pady=5, expand=True)
 
         
-    def proj_bagla(self):
-        self.db = self.Database(self.Projdb_file.get())
-        
-        self.populate_list2()
+    def proj_bagla(self, db_file='deneme.db'):
+        self.db = self.Database(db_file)
     
     def proj_ekle(self):
         print("Eklenen:", self.Proj_name.get())
