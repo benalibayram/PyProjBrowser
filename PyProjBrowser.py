@@ -20,7 +20,7 @@ class Application(Frame):
 
     def create_widgets(self):
         
-        self.master.title("GUIexample")
+        self.master.title("PyProjBrowser")
         self.pack(fill=BOTH, expand=True)
         
         frame_ust = Frame(self)
