@@ -1,20 +1,56 @@
-CREATE TABLE "MRcekim" (
-	"MRcekimID"	INTEGER UNIQUE,
-	"MRcekimAciklama"	TEXT NOT NULL,
-	PRIMARY KEY("MRcekimID" AUTOINCREMENT)
+CREATE TABLE "Lab_People" (
+	"ID"	INTEGER UNIQUE,
+	"Name"	TEXT NOT NULL,
+	PRIMARY KEY("ID" AUTOINCREMENT)
 )
-CREATE TABLE "projeler" (
-	"id"	INTEGER UNIQUE,
-	"isim"	TEXT,
-	"ProjPI"	TEXT,
-	"ProjType"	INTEGER,
-	"ProjPatientGroup"	INTEGER,
-	"ProjSekans"	INTEGER,
-	PRIMARY KEY("id" AUTOINCREMENT)
+CREATE TABLE "Projects" (
+	"Project_ID"	INTEGER UNIQUE,
+	"Project_Name"	TEXT NOT NULL,
+	PRIMARY KEY("Project_ID" AUTOINCREMENT)
 )
-CREATE TABLE "projeler_MRcekim_joint" (
-	"projeler_id"	INTEGER NOT NULL,
-	"MRcekimID"	INTEGER NOT NULL,
-	FOREIGN KEY("projeler_id") REFERENCES "projeler"("id") ON DELETE RESTRICT,
-	FOREIGN KEY("MRcekimID") REFERENCES "MRcekim"("MRcekimID") ON DELETE RESTRICT
+CREATE TABLE "Projects_Sequence_joint" (
+	"Project_ID"	INTEGER NOT NULL,
+	"Sequence_ID"	INTEGER NOT NULL,
+	FOREIGN KEY("Project_ID") REFERENCES "Projects"("Project_ID") ON DELETE RESTRICT,
+	FOREIGN KEY("Sequence_ID") REFERENCES "Sequence_Type"("Sequence_ID") ON DELETE RESTRICT
+)
+CREATE TABLE "Projects_Subject_Type_joint" (
+	"Project_ID"	INTEGER NOT NULL,
+	"Subject_Type_ID"	INTEGER NOT NULL,
+	FOREIGN KEY("Project_ID") REFERENCES "Projects"("Project_ID") ON DELETE RESTRICT,
+	FOREIGN KEY("Subject_Type_ID") REFERENCES "Subject_Type"("Subject_Type_ID") ON DELETE RESTRICT
+)
+CREATE TABLE "Scans" (
+	"Scan_ID"	INTEGER UNIQUE,
+	"Project_ID"	INTEGER NOT NULL,
+	"Subject_Type_ID"	INTEGER NOT NULL,
+	"Subject_ID"	INTEGER NOT NULL,
+	"Sequence_ID"	INTEGER NOT NULL,
+	"Lab_People_ID"	INTEGER NOT NULL,
+	"Date"	TEXT NOT NULL,
+	"Description"	TEXT,
+	PRIMARY KEY("Scan_ID" AUTOINCREMENT),
+	FOREIGN KEY("Subject_Type_ID") REFERENCES "Subject_Type"("Subject_Type_ID"),
+	FOREIGN KEY("Sequence_ID") REFERENCES "Sequence_Type"("Sequence_ID"),
+	FOREIGN KEY("Subject_ID") REFERENCES "Subjects"("Subject_ID"),
+	FOREIGN KEY("Lab_People_ID") REFERENCES "Lab_People"("ID"),
+	FOREIGN KEY("Project_ID") REFERENCES "Projects"("Project_ID")
+)
+CREATE TABLE "Sequence_Type" (
+	"Sequence_ID"	INTEGER UNIQUE,
+	"Sequence_Name"	TEXT NOT NULL,
+	PRIMARY KEY("Sequence_ID" AUTOINCREMENT)
+)
+CREATE TABLE "Subject_Type" (
+	"Subject_Type_ID"	INTEGER UNIQUE,
+	"Subject_Type_Name"	TEXT NOT NULL,
+	PRIMARY KEY("Subject_Type_ID" AUTOINCREMENT)
+)
+CREATE TABLE "Subjects" (
+	"Subject_ID"	INTEGER UNIQUE,
+	"Subject_Name"	TEXT NOT NULL,
+	"Subject_Sex"	TEXT NOT NULL,
+	"Subject_Handedness"	TEXT NOT NULL,
+	"Subject_DateOfBirth"	TEXT NOT NULL,
+	PRIMARY KEY("Subject_ID" AUTOINCREMENT)
 )
