@@ -49,8 +49,15 @@ CREATE TABLE "Subject_Type" (
 CREATE TABLE "Subjects" (
 	"Subject_ID"	INTEGER UNIQUE,
 	"Subject_Name"	TEXT NOT NULL,
+	"Subject_Surname"	TEXT NOT NULL,
 	"Subject_Sex"	TEXT NOT NULL,
 	"Subject_Handedness"	TEXT NOT NULL,
 	"Subject_DateOfBirth"	TEXT NOT NULL,
+	"Subject_EduGrade"	TEXT NOT NULL,
+	"Subject_EduYear"	TEXT NOT NULL,
+	"Subject_PhoneNum"	TEXT NOT NULL,
+	"Subject_DrugUsage"	INTEGER NOT NULL,
+	"Subject_ChronicDisease"	TEXT NOT NULL,
+	"Subject_Disease"	TEXT NOT NULL,
 	PRIMARY KEY("Subject_ID" AUTOINCREMENT)
 )
