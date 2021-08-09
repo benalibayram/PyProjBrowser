@@ -480,6 +480,7 @@ class Application(tk.Frame):
             current = self.update_chars(current)
             self.notes_txt.delete(1.0, tk.END)
             self.notes_txt.insert(1.0, current)
+            
 if __name__ == "__main__":
     root = tk.Tk()
     app = Application(master=root)
