@@ -34,8 +34,12 @@ class Database:
         return rows
     
     def insert_update_delete(self, query, params):
-        self.cur.execute(query, params)
-        self.conn.commit()
+        try:
+            self.cur.execute(query, params)
+            self.conn.commit()
+            return 0
+        except Error as e:
+            return e
     
     def __del__(self):
         self.conn.close()
@@ -91,27 +95,29 @@ class Application(tk.Frame):
             return 0
         # Subject
         if len(self.subject_name.get()) == 0:
-            tk.messagebox.showerror("Error: Eksik", "Katılımcı İsmi")
+            tk.messagebox.showerror("Hata: Eksik", "Katılımcı İsmi")
             return 0
         if len(self.subject_surname.get()) == 0:
-            tk.messagebox.showerror("Error: Eksik", "Katılımcı Soyismi")
+            tk.messagebox.showerror("Hata: Eksik", "Katılımcı Soyismi")
             return 0
         # print("Cinsiyet:", self.gender.get())
         # print("El tercihi:", self.handedness.get())
         if self.subj_age.get() == 0:
-            tk.messagebox.showerror("Error: Yanlış", "Katılımcı Yaşı")
+            tk.messagebox.showerror("Hata: Yanlış", "Katılımcı Yaşı")
             return 0
         if self.subjedu_combo.current() == -1:
-            tk.messagebox.showerror("Error: Eksik", "Eğitim Seviyesi")
+            tk.messagebox.showerror("Hata: Eksik", "Eğitim Seviyesi")
             return 0
         # print("Eğitim Yılı:", self.subj_eduyear.get())
         # print("Telefon No:", self.phone_number.get())
-        # print("İlaç kullanımı:", self.subj_med.get())
-        if len(self.subjillness2_txt.get(1.0, tk.END+"-1c")) == 0:
-            tk.messagebox.showerror("Error: Eksik", "Kronik Hastalık")
-            return 0
         if len(self.subjillness1_txt.get(1.0, tk.END+"-1c")) == 0:
-            tk.messagebox.showerror("Error: Eksik", "Hastalık")
+            tk.messagebox.showerror("Hata: Eksik", "Nörolojik/Psikiyatrik Hastalık")
+            return 0
+        if len(self.subjillness2_txt.get(1.0, tk.END+"-1c")) == 0:
+            tk.messagebox.showerror("Hata: Eksik", "Kronik Hastalık")
+            return 0
+        if len(self.subj_med_txt.get(1.0, tk.END+"-1c")) == 0:
+            tk.messagebox.showerror("Hata: Eksik", "İlaç Kullanımı")
             return 0
         
         # Scan
@@ -120,9 +126,19 @@ class Application(tk.Frame):
         # print("Çekim Tarihi:", self.scanday_dateentry.get_date())
         # print("Notlar:", self.notes_txt.get(1.0, tk.END+"-1c"))
         if self.subjgroup_combo.current() == -1:
-            tk.messagebox.showerror("Error: Eksik", "Katılımcı Grubu")
+            tk.messagebox.showerror("Hata: Eksik", "Katılımcı Grubu")
             return 0
         
+        children_checklist = self.sequences_checklist.get_checked()
+        if len(children_checklist) == 0:
+            tk.messagebox.showerror("Hata: Eksik", "Sekans Seçimi")
+            return 0
+        answer = tk.messagebox.askokcancel(title = "Onay",
+            message = "Katılımcıyı ve çekimleri kaydetmek istediğinize emin misiniz?",
+            icon = "warning")
+        if not answer:
+            tk.messagebox.showinfo(title = "Kayıt", message = "Kayıt iptal.")
+            return 0
     # =========================================================================
     # ========================= Yeni Subject ==================================
     # =========================================================================
@@ -130,14 +146,18 @@ class Application(tk.Frame):
         :Subject_Sex, :Subject_Handedness, :Subject_DateOfBirth, :Subject_EduGrade,
         :Subject_EduYear, :Subject_PhoneNum, :Subject_DrugUsage, :Subject_ChronicDisease,
         :Subject_Disease)"""
-        self.db.insert_update_delete(querry_insertsubj, 
+        result_insertsubj = self.db.insert_update_delete(querry_insertsubj, 
         {"Subject_Name": self.subject_name.get(), "Subject_Surname": self.subject_surname.get(), 
         "Subject_Sex": self.gender.get(), "Subject_Handedness": self.handedness.get(), 
         "Subject_DateOfBirth": self.birthday_dateentry.get_date(), 
         "Subject_EduGrade": self.subjedu_combo.current(), "Subject_EduYear": self.subj_eduyear.get(), 
-        "Subject_PhoneNum": self.phone_number.get(), "Subject_DrugUsage": self.subj_med.get(),
+        "Subject_PhoneNum": self.phone_number.get(), 
+        "Subject_DrugUsage": self.subj_med_txt.get(1.0, tk.END+"-1c"),
         "Subject_ChronicDisease": self.subjillness2_txt.get(1.0, tk.END+"-1c"), 
         "Subject_Disease": self.subjillness1_txt.get(1.0, tk.END+"-1c")})
+        if result_insertsubj != 0:
+            tk.messagebox.showerror("Hata: Katılımcı kaydedilemedi", result_insertsubj)
+            return 0
         
         query_lastinsertID = "select seq from sqlite_sequence where name=:SubjTableName"
         self.subj_id = self.db.fetch_params(query_lastinsertID, {"SubjTableName": "Subjects"})[0][0]
@@ -145,20 +165,22 @@ class Application(tk.Frame):
     # =========================================================================
     # ========================= Yeni Çekim ====================================
     # =========================================================================
-        if len(self.sequences_checklist.get_checked()) != 0:
-            children_list = self.sequences_checklist.get_children("")
-            children_checklist = self.sequences_checklist.get_checked()
-            querry_insertscan = """insert into Scans values (NULL, :Project_ID, 
-            :Subject_Type_ID, :Subject_ID, :Sequence_ID, :Lab_People_ID, 
-            :Date, :Description)"""
-            #insert for each sequence
-            for chld in children_checklist:
-                self.db.insert_update_delete(querry_insertscan, {"Project_ID": self.secilen[0], 
+        children_list = self.sequences_checklist.get_children("")
+        querry_insertscan = """insert into Scans values (NULL, :Project_ID, 
+        :Subject_Type_ID, :Subject_ID, :Sequence_ID, :Lab_People_ID, 
+        :Date, :Description)"""
+        #insert for each sequence
+        for chld in children_checklist:
+            result_insertscan = self.db.insert_update_delete(querry_insertscan, {"Project_ID": self.secilen[0], 
                 "Subject_Type_ID": self.subj_types_id[self.subjgroup_combo_selectedind][1], 
                 "Subject_ID": self.subj_id, "Sequence_ID": self.seqtypes_id[children_list.index(chld)][1], 
                 "Lab_People_ID": self.labpeople[self.ceken][0], "Date": self.scanday_dateentry.get_date(), 
                 "Description": self.notes_txt.get(1.0, tk.END+"-1c")})
         
+        if result_insertscan != 0:
+            tk.messagebox.showerror("Hata: Katılımcı kaydedilemedi", result_insertscan)
+        else:
+            tk.messagebox.showinfo("Tebrikler:", "Katılımcı ve çekimler kaydedildi")
     # def click_tab(self, event):
     #     clicked_tab = self.nb.tk.call(self.nb._w, "identify", "tab", event.x, event.y)
         # if self.nb.index(self.nb.select()) == 0:
@@ -269,6 +291,7 @@ class Application(tk.Frame):
         phone_group = ttk.Labelframe(frame, text='Telefon Numarası\n0(212)123-4567')
         subjillness1_group = ttk.Labelframe(frame, text='Nörolojik/Psikiyatrik hastalık')
         subjillness2_group = ttk.Labelframe(frame, text='Kronik hastalık')
+        druguse_group = ttk.Labelframe(frame, text='İlaç Kullanımı')
         
         self.subjgroup_combo = ttk.Combobox(subjgroup_group, postcommand = self.populate_subjtypes) # font = fontExample = ("Courier", 16, "bold")
         self.subjgroup_combo.bind("<<ComboboxSelected>>", self.subjgroup_combo_selected)
@@ -316,17 +339,35 @@ class Application(tk.Frame):
         self.phone_entry.bind('<KeyRelease>', self.frmtphone)
         self.phone_entry.pack(fill="both", expand=True)
         
-        self.subjillness1_txt = tk.Text(subjillness1_group, wrap=tk.WORD, width=20, height=5)
+        self.subjillness1 = tk.BooleanVar(value=False)
+        self.subjillness1_check = ttk.Checkbutton(subjillness1_group, 
+            text='Nörolojik/Psikiyatrik hastalık var.', variable=self.subjillness1, 
+            command=self.subjillness1_checked)
+        self.subjillness1_check.pack(side=tk.TOP, fill=tk.X)
+        self.subjillness1_txt = tk.Text(subjillness1_group, wrap=tk.WORD, width=20, height=3)
         self.subjillness1_txt.bind('<KeyRelease>', self.frmtchar1)
         self.subjillness1_txt.pack(fill=tk.BOTH, expand=True)
+        self.subjillness1_checked()
         
-        self.subjillness2_txt = tk.Text(subjillness2_group, wrap=tk.WORD, width=20, height=5)
+        self.subjillness2 = tk.BooleanVar(value=False)
+        self.subjillness2_check = ttk.Checkbutton(subjillness2_group, 
+            text='Kronik hastalık var.', variable=self.subjillness2, 
+            command=self.subjillness2_checked)
+        self.subjillness2_check.pack(side=tk.TOP, fill=tk.X)
+        self.subjillness2_txt = tk.Text(subjillness2_group, wrap=tk.WORD, width=20, height=3)
         self.subjillness2_txt.bind('<KeyRelease>', self.frmtchar2)
         self.subjillness2_txt.pack(fill=tk.BOTH, expand=True)
+        self.subjillness2_checked()
         
-        self.subj_med = tk.IntVar(value=0)
-        self.subj_med_check = ttk.Checkbutton(frame, text='İlaç kullanımı var.', variable=self.subj_med, onvalue=1, offvalue=0)
-        self.subj_med_check.grid(row=5, column=3, padx=10, sticky=tk.EW)
+        self.subj_med = tk.BooleanVar(value=False)
+        self.subj_med_check = ttk.Checkbutton(druguse_group, 
+            text='İlaç kullanımı var.', variable=self.subj_med, 
+            command=self.subj_med_checked)
+        self.subj_med_check.pack(side=tk.TOP, fill=tk.X)
+        self.subj_med_txt = tk.Text(druguse_group, wrap=tk.WORD, width=20, height=2)
+        self.subj_med_txt.bind('<KeyRelease>', self.frmtchar3)
+        self.subj_med_txt.pack(fill=tk.BOTH, expand=True)
+        self.subj_med_checked()
         
         subjgroup_group.grid(row=1, column=1, padx=10, sticky=tk.EW)
         name_group.grid(row=2, column=1, padx=10, sticky=tk.EW)
@@ -340,7 +381,7 @@ class Application(tk.Frame):
         phone_group.grid(row=5, column=2, padx=10, sticky=tk.EW)
         subjillness1_group.grid(row=1, column=3, rowspan=2, padx=10, sticky=tk.EW)
         subjillness2_group.grid(row=3, column=3, rowspan=2, padx=10, sticky=tk.EW)
-        
+        druguse_group.grid(row=5, column=3, padx=10, sticky=tk.EW)
         self.nb.add(frame, text='Katılımcı', underline=0)
         
     def populate_subjtypes(self):
@@ -356,18 +397,19 @@ class Application(tk.Frame):
         self.subjgroup_combo_selectedind = self.subjgroup_combo.current()
     
     def update_chars(self, current):
-        if current[-1] == 'þ':
-            current = current[:-1] + 'ş'
-        if current[-1] == 'Þ':
-            current = current[:-1] + 'Ş'
-        if current[-1] == 'ð':
-            current = current[:-1] + 'ğ'
-        if current[-1] == 'Ð':
-            current = current[:-1] + 'Ğ'
-        if current[-1] == 'ý':
-            current = current[:-1] + 'ı'
-        if current[-1] == 'Ý':
-            current = current[:-1] + 'İ'
+        if len(current) != 0:
+            if current[-1] == 'þ':
+                current = current[:-1] + 'ş'
+            if current[-1] == 'Þ':
+                current = current[:-1] + 'Ş'
+            if current[-1] == 'ð':
+                current = current[:-1] + 'ğ'
+            if current[-1] == 'Ð':
+                current = current[:-1] + 'Ğ'
+            if current[-1] == 'ý':
+                current = current[:-1] + 'ı'
+            if current[-1] == 'Ý':
+                current = current[:-1] + 'İ'
         return current
     
     def frmtnamechar(self, event):
@@ -382,18 +424,51 @@ class Application(tk.Frame):
             current = self.subject_surname.get()
             current = self.update_chars(current)
             self.subject_surname.set(current)
+    
+    def subjillness1_checked(self):
+        if self.subjillness1.get():
+            self.subjillness1_txt.configure(state=tk.NORMAL, bg= "white")
+            self.subjillness1_txt.delete(1.0, tk.END)
+        else:
+            self.subjillness1_txt.delete(1.0, tk.END)
+            self.subjillness1_txt.insert(1.0, "yok")
+            self.subjillness1_txt.configure(state=tk.DISABLED, bg= "light gray")
     def frmtchar1(self, event):
         if event.char == "":
             current = self.subjillness1_txt.get(1.0, tk.END+"-1c")
             current = self.update_chars(current)
             self.subjillness1_txt.delete(1.0, tk.END)
             self.subjillness1_txt.insert(1.0, current)
+            
+    def subjillness2_checked(self):
+        if self.subjillness2.get():
+            self.subjillness2_txt.configure(state=tk.NORMAL, bg= "white")
+            self.subjillness2_txt.delete(1.0, tk.END)
+        else:
+            self.subjillness2_txt.delete(1.0, tk.END)
+            self.subjillness2_txt.insert(1.0, "yok")
+            self.subjillness2_txt.configure(state=tk.DISABLED, bg= "light gray")
     def frmtchar2(self, event):
         if event.char == "":
             current = self.subjillness2_txt.get(1.0, tk.END+"-1c")
             current = self.update_chars(current)
             self.subjillness2_txt.delete(1.0, tk.END)
             self.subjillness2_txt.insert(1.0, current)
+            
+    def subj_med_checked(self):
+        if self.subj_med.get():
+            self.subj_med_txt.configure(state=tk.NORMAL, bg= "white")
+            self.subj_med_txt.delete(1.0, tk.END)
+        else:
+            self.subj_med_txt.delete(1.0, tk.END)
+            self.subj_med_txt.insert(1.0, "yok")
+            self.subj_med_txt.configure(state=tk.DISABLED, bg= "light gray")
+    def frmtchar3(self, event):
+        if event.char == "":
+            current = self.subj_med_txt.get(1.0, tk.END+"-1c")
+            current = self.update_chars(current)
+            self.subj_med_txt.delete(1.0, tk.END)
+            self.subj_med_txt.insert(1.0, current)
     
     def frmtphone(self, event):
         current = self.phone_number.get()
@@ -472,7 +547,7 @@ class Application(tk.Frame):
         querry_joint = "select * from Projects_Sequence_joint where Project_ID=:projid"
         self.seqtypes_id = self.db.fetch_params(querry_joint, {"projid": self.secilen[0]})
         for chld_ind in self.seqtypes_id:
-            self.sequences_checklist.insert("", "end", text=sequence_types[(chld_ind[1] - 1)][1])
+            self.sequences_checklist.insert("", "end", text=sequence_types[(chld_ind[1] - 1)][1], tags="checked")
         
     def noteschar(self, event):
         if event.char == "":
