@@ -1,0 +1,2 @@
+ttkwidgets~=0.13.0
+tkcalendar~=1.6.1
