@@ -1,0 +1,7 @@
+LICENSE
+README.md
+setup.py
+ScanGUI.egg-info/PKG-INFO
+ScanGUI.egg-info/SOURCES.txt
+ScanGUI.egg-info/dependency_links.txt
+ScanGUI.egg-info/top_level.txt

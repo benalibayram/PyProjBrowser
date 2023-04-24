@@ -126,12 +126,12 @@ class Application(tk.Frame):
         # print("Çekim Tarihi:", self.scanday_dateentry.get_date())
         # print("Notlar:", self.notes_txt.get(1.0, tk.END+"-1c"))
         if self.subjgroup_combo.current() == -1:
-            tk.messagebox.showerror("Hata: Eksik", "Katılımcı Grubu")
+            tk.messagebox.showerror('Hata: Eksik', 'Katılımcı Grubu')
             return 0
         
         children_checklist = self.sequences_checklist.get_checked()
         if len(children_checklist) == 0:
-            tk.messagebox.showerror("Hata: Eksik", "Sekans Seçimi")
+            tk.messagebox.showerror('Hata: Eksik', 'Sekans Seçimi')
             return 0
         answer = tk.messagebox.askokcancel(title = "Onay",
             message = "Katılımcıyı ve çekimleri kaydetmek istediğinize emin misiniz?",

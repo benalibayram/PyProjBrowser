@@ -1,0 +1,5 @@
+Metadata-Version: 2.1
+Name: ScanGUI
+Version: 0.1
+Summary: MRI scan GUI with SQLite3
+License-File: LICENSE
